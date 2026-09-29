@@ -1,20 +1,29 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { LoginScreen } from './src/presentation/screens/LoginScreen';
+import { RegisterScreen } from './src/presentation/screens/RegisterScreen';
+import { HomeScreen } from './src/presentation/screens/HomeScreen';
 
 export default function App() {
+  const [usuario, setUsuario] = useState<any>(null);
+  const [pantallaActual, setPantallaActual] = useState<'login' | 'registro'>('login');
+
+  if (usuario) {
+    return <HomeScreen />;
+  }
+
+  if (pantallaActual === 'registro') {
+    return (
+      <RegisterScreen
+        onRegisterSuccess={() => setPantallaActual('login')}
+        onNavigateToLogin={() => setPantallaActual('login')}
+      />
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <LoginScreen
+      onLoginSuccess={(user) => setUsuario(user)}
+      onNavigateToRegister={() => setPantallaActual('registro')}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
