@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { LoginScreen } from './src/presentation/screens/LoginScreen';
 import { RegisterScreen } from './src/presentation/screens/RegisterScreen';
-import { HomeScreen } from './src/presentation/screens/HomeScreen';
+import HomeScreen from './src/presentation/screens/HomeScreen';
 
 export default function App() {
   const [usuario, setUsuario] = useState<any>(null);
   const [pantallaActual, setPantallaActual] = useState<'login' | 'registro'>('login');
 
   if (usuario) {
-    return <HomeScreen />;
+    return <HomeScreen usuario={usuario} setUsuario={setUsuario} />;
   }
 
   if (pantallaActual === 'registro') {
@@ -22,7 +22,10 @@ export default function App() {
 
   return (
     <LoginScreen
-      onLoginSuccess={(user) => setUsuario(user)}
+      onLoginSuccess={(user) => {
+        console.log('Usuario recibido en Login:', user);
+        setUsuario(user);
+      }}
       onNavigateToRegister={() => setPantallaActual('registro')}
     />
   );
