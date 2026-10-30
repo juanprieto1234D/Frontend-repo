@@ -9,30 +9,41 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEstilos } from '../theme/tema';
+import { BotonGoogle } from '../components/BotonGoogle';
+import { GOOGLE_HABILITADO } from '../../infrastructure/config/google';
 import { HttpAuthRepository } from '../../infrastructure/adapters/HttpAuthRepository';
 
 interface Props {
   onLoginSuccess?: (user: any) => void;
   onNavigateToRegister?: () => void;
+  onNavigateToRecuperar?: () => void;
   navigation?: any;
 }
 
 const authRepo = new HttpAuthRepository();
 
-export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onNavigateToRegister, navigation }) => {
+export const LoginScreen: React.FC<Props> = ({
+  onLoginSuccess,
+  onNavigateToRegister,
+  onNavigateToRecuperar,
+  navigation,
+}) => {
+  const estilos = useEstilos(styles);
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleLogin = async () => {
     if (!correo || !contrasena) {
-      Alert.alert('Error', 'Por favor ingresa tu correo y contraseña');
+      setError('Por favor ingresa tu correo y contraseña');
       return;
     }
 
+    setError(null);
     setCargando(true);
     try {
       const respuesta = await authRepo.iniciarSesion(correo, contrasena);
@@ -54,10 +65,22 @@ export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onNavigateToRegis
       }
     } catch (error: any) {
       setCargando(false);
-      Alert.alert('Error de inicio de sesión', error.message || 'No se pudo conectar con el servidor');
+      setError(error.message || 'No se pudo conectar con el servidor');
     }
   };
 
+  const handleGoogle = async (idToken: string) => {
+    setError(null);
+    setCargando(true);
+    try {
+      const respuesta = await authRepo.iniciarSesionConGoogle(idToken);
+      if (onLoginSuccess) onLoginSuccess(respuesta.usuario);
+    } catch (e: any) {
+      setError(e?.message || 'No se pudo iniciar sesión con Google');
+    } finally {
+      setCargando(false);
+    }
+  };
   const handleGoToRegister = () => {
     if (onNavigateToRegister) {
       onNavigateToRegister();
@@ -69,28 +92,32 @@ export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onNavigateToRegis
   return (
     <LinearGradient
       colors={['#4C49ED', '#6B3CE9', '#2E1C73']}
-      style={styles.background}
+      style={estilos.background}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={estilos.container}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.card}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoIcon}>✓</Text>
+        <ScrollView contentContainerStyle={estilos.scrollContent}>
+          <View style={estilos.card}>
+            <View style={estilos.logoBadge}>
+              <Text style={estilos.logoIcon}>✓</Text>
             </View>
             
-            <Text style={styles.tagline}>BIENVENIDO DE NUEVO</Text>
-            <Text style={styles.title}>Inicia sesión</Text>
-            <Text style={styles.subtitle}>
+            <Text style={estilos.tagline}>BIENVENIDO DE NUEVO</Text>
+            <Text style={estilos.title}>Inicia sesión</Text>
+            {error && (
+              <View style={estilos.errorBanner}>
+                <Text style={estilos.errorTexto}>{error}</Text>
+              </View>
+            )}            <Text style={estilos.subtitle}>
               Organiza tu día y convierte tus planes en logros.
             </Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Correo electrónico</Text>
+            <View style={estilos.inputContainer}>
+              <Text style={estilos.label}>Correo electrónico</Text>
               <TextInput
-                style={styles.input}
+                style={estilos.input}
                 placeholder="admin@test.com"
                 placeholderTextColor="#A0AEC0"
                 value={correo}
@@ -100,15 +127,15 @@ export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onNavigateToRegis
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Contraseña</Text>
-                <TouchableOpacity>
-                  <Text style={styles.forgotPassword}>¿La olvidaste?</Text>
+            <View style={estilos.inputContainer}>
+              <View style={estilos.labelRow}>
+                <Text style={estilos.label}>Contraseña</Text>
+                <TouchableOpacity onPress={onNavigateToRecuperar}>
+                  <Text style={estilos.forgotPassword}>¿La olvidaste?</Text>
                 </TouchableOpacity>
               </View>
               <TextInput
-                style={styles.input}
+                style={estilos.input}
                 placeholder="••••••"
                 placeholderTextColor="#A0AEC0"
                 secureTextEntry
@@ -118,26 +145,36 @@ export const LoginScreen: React.FC<Props> = ({ onLoginSuccess, onNavigateToRegis
             </View>
 
             <TouchableOpacity 
-              style={styles.button} 
+              style={estilos.button} 
               onPress={handleLogin}
               disabled={cargando}
             >
               <LinearGradient
                 colors={['#5D5FEF', '#4C49ED']}
-                style={styles.buttonGradient}
+                style={estilos.buttonGradient}
               >
                 {cargando ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                  <Text style={estilos.buttonText}>Iniciar Sesión</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>¿Aún no tienes una cuenta? </Text>
+            {GOOGLE_HABILITADO && (
+              <>
+                <View style={estilos.divisor}>
+                  <View style={estilos.divisorLinea} />
+                  <Text style={estilos.divisorTexto}>o</Text>
+                  <View style={estilos.divisorLinea} />
+                </View>
+                <BotonGoogle onCredential={handleGoogle} />
+              </>
+            )}
+            <View style={estilos.footer}>
+              <Text style={estilos.footerText}>¿Aún no tienes una cuenta? </Text>
               <TouchableOpacity onPress={handleGoToRegister}>
-                <Text style={styles.linkText}>Regístrate</Text>
+                <Text style={estilos.linkText}>Regístrate</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -189,6 +226,16 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 26, fontWeight: '800', color: '#1E1B4B', marginBottom: 6 },
   subtitle: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  errorBanner: {
+    width: '100%',
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    marginTop: -8,
+  },
+  errorTexto: { fontSize: 12, color: '#B91C1C', textAlign: 'center' },
   inputContainer: { width: '100%', marginBottom: 16 },
   labelRow: {
     flexDirection: 'row',
@@ -212,6 +259,15 @@ const styles = StyleSheet.create({
   button: { width: '100%', height: 50, borderRadius: 14, overflow: 'hidden', marginTop: 8 },
   buttonGradient: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  divisor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 16,
+    gap: 10,
+  },
+  divisorLinea: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
+  divisorTexto: { fontSize: 12, color: '#9CA3AF', fontWeight: '600' },
   footer: { flexDirection: 'row', marginTop: 24 },
   footerText: { fontSize: 13, color: '#6B7280' },
   linkText: { fontSize: 13, fontWeight: '700', color: '#5D5FEF' },

@@ -9,10 +9,11 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useEstilos } from '../theme/tema';
 import { HttpAuthRepository } from '../../infrastructure/adapters/HttpAuthRepository';
+import { DialogoConfirmacion } from '../components/DialogoConfirmacion';
 
 interface Props {
   onRegisterSuccess?: () => void;
@@ -23,32 +24,29 @@ interface Props {
 const authRepo = new HttpAuthRepository();
 
 export const RegisterScreen: React.FC<Props> = ({ onRegisterSuccess, onNavigateToLogin, navigation }) => {
+  const estilos = useEstilos(styles);
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [exito, setExito] = useState(false);
 
   const handleRegister = async () => {
     if (!nombre || !correo || !contrasena) {
-      Alert.alert('Error', 'Por favor llena todos los campos');
+      setError('Por favor llena todos los campos');
       return;
     }
 
+    setError(null);
     setCargando(true);
     try {
       await authRepo.registrar(nombre, correo, contrasena);
       setCargando(false);
-      Alert.alert('¡Cuenta creada!', 'Tu usuario se ha registrado con éxito.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            if (onRegisterSuccess) onRegisterSuccess();
-          },
-        },
-      ]);
+      setExito(true);
     } catch (error: any) {
       setCargando(false);
-      Alert.alert('Error de registro', error.message || 'No se pudo completar el registro');
+      setError(error.message || 'No se pudo completar el registro');
     }
   };
 
@@ -63,28 +61,32 @@ export const RegisterScreen: React.FC<Props> = ({ onRegisterSuccess, onNavigateT
   return (
     <LinearGradient
       colors={['#4C49ED', '#6B3CE9', '#2E1C73']}
-      style={styles.background}
+      style={estilos.background}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={estilos.container}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.card}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoIcon}>✓</Text>
+        <ScrollView contentContainerStyle={estilos.scrollContent}>
+          <View style={estilos.card}>
+            <View style={estilos.logoBadge}>
+              <Text style={estilos.logoIcon}>✓</Text>
             </View>
 
-            <Text style={styles.tagline}>EMPIEZA HOY</Text>
-            <Text style={styles.title}>Crea tu cuenta</Text>
-            <Text style={styles.subtitle}>
+            <Text style={estilos.tagline}>EMPIEZA HOY</Text>
+            <Text style={estilos.title}>Crea tu cuenta</Text>
+            {error && (
+              <View style={estilos.errorBanner}>
+                <Text style={estilos.errorTexto}>{error}</Text>
+              </View>
+            )}            <Text style={estilos.subtitle}>
               Únete a TaskUp para gestionar tus tareas eficientemente.
             </Text>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Nombre completo</Text>
+            <View style={estilos.inputContainer}>
+              <Text style={estilos.label}>Nombre completo</Text>
               <TextInput
-                style={styles.input}
+                style={estilos.input}
                 placeholder="Tu nombre"
                 placeholderTextColor="#A0AEC0"
                 value={nombre}
@@ -92,10 +94,10 @@ export const RegisterScreen: React.FC<Props> = ({ onRegisterSuccess, onNavigateT
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Correo electrónico</Text>
+            <View style={estilos.inputContainer}>
+              <Text style={estilos.label}>Correo electrónico</Text>
               <TextInput
-                style={styles.input}
+                style={estilos.input}
                 placeholder="admin@test.com"
                 placeholderTextColor="#A0AEC0"
                 value={correo}
@@ -105,10 +107,10 @@ export const RegisterScreen: React.FC<Props> = ({ onRegisterSuccess, onNavigateT
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Contraseña</Text>
+            <View style={estilos.inputContainer}>
+              <Text style={estilos.label}>Contraseña</Text>
               <TextInput
-                style={styles.input}
+                style={estilos.input}
                 placeholder="••••••"
                 placeholderTextColor="#A0AEC0"
                 secureTextEntry
@@ -118,32 +120,45 @@ export const RegisterScreen: React.FC<Props> = ({ onRegisterSuccess, onNavigateT
             </View>
 
             <TouchableOpacity 
-              style={styles.button} 
+              style={estilos.button} 
               onPress={handleRegister}
               disabled={cargando}
             >
               <LinearGradient
                 colors={['#5D5FEF', '#4C49ED']}
-                style={styles.buttonGradient}
+                style={estilos.buttonGradient}
               >
                 {cargando ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.buttonText}>Registrarse</Text>
+                  <Text style={estilos.buttonText}>Registrarse</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>¿Ya tienes una cuenta? </Text>
+            <View style={estilos.footer}>
+              <Text style={estilos.footerText}>¿Ya tienes una cuenta? </Text>
               <TouchableOpacity onPress={handleGoToLogin}>
-                <Text style={styles.linkText}>Inicia sesión</Text>
+                <Text style={estilos.linkText}>Inicia sesión</Text>
               </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </LinearGradient>
+      <DialogoConfirmacion
+        visible={exito}
+        datos={{
+          titulo: '¡Cuenta creada!',
+          mensaje: 'Tu usuario se ha registrado con éxito. Ya puedes iniciar sesión.',
+          textoConfirmar: 'OK',
+          soloAceptar: true,
+        }}
+        onConfirmar={() => {
+          setExito(false);
+          if (onRegisterSuccess) onRegisterSuccess();
+        }}
+        onCancelar={() => setExito(false)}
+      />    </LinearGradient>
   );
 };
 
@@ -189,6 +204,16 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 26, fontWeight: '800', color: '#1E1B4B', marginBottom: 6 },
   subtitle: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 24 },
+  errorBanner: {
+    width: '100%',
+    backgroundColor: '#FEE2E2',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    marginTop: -8,
+  },
+  errorTexto: { fontSize: 12, color: '#B91C1C', textAlign: 'center' },
   inputContainer: { width: '100%', marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
   input: {
