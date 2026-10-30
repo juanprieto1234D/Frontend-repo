@@ -1,8 +1,9 @@
 export interface Tarea {
-id: string;
-titulo: string;
-descripcion: string | null;
-completada: boolean;
-fechaLimite: Date | null;
-usuarioId: string;
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  completada: boolean;
+  fechaLimite: Date | null;
+  usuarioId: string;
+  materiaId?: string | null;
 }

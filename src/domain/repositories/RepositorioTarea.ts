@@ -1,5 +1,5 @@
 import { Tarea } from '../models/Tarea';
 
 export interface RepositorioTarea {
-  obtenerTareas(): Promise<Tarea[]>;
+  listarPorUsuario(usuarioId: string): Promise<Tarea[]>;
 }
